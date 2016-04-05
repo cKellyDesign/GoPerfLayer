@@ -1,0 +1,20 @@
+{
+  "ImportPath": "github.com/cKellyDesign/goTest",
+  "GoVersion": "go1.6",
+  "Deps": [
+    {
+      "ImportPath": "github.com/google/go-github/github",
+      "Rev": "7ea4ee6d222607c11ea86e99a6f6723beeae785d"
+    },
+    {
+      "ImportPath": "github.com/Sirupsen/logrus",
+      "Comment": "v0.8.2-12-g2a0a9a1",
+      "Rev": "2a0a9a12ae2892ccfa9ab59c1222e9dcd29f9367"
+    },
+    {
+      "ImportPath": "code.google.com/p/goauth2/oauth",
+      "Comment": "weekly-56",
+      "Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
+    }  
+  ]
+}
