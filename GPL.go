@@ -44,28 +44,7 @@ func startWebServer() {
   log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-// Routes the POST req.Body into the ElasticSearch channel to be indexed
-func routeReport(rw http.ResponseWriter, req *http.Request) {
-  body, _ := ioutil.ReadAll(req.Body)
-  // bodyStr := string(body)
-  // bodyBts := []byte(bodyStr)
-  // var returnStr string
-
-  var report Report
-  err := json.Unmarshal(body, &report)
-  if err != nil {
-    panic(err)
-  }
-
-  // report := reports[0]
-
-  // fmt.Printf("\n\nReport Type: %v", report.EnvData.UserAgent)
-  handleReportData(report)
-
-  elastiChan <- string(body) // send stringified report to ElasticSearch via elastiChan channel
-}
-
-// confirm only POST methods are being used
+// Middleware confirming only POST methods are being used
 func postOnly(handle http.HandlerFunc) http.HandlerFunc {
   return func(rw http.ResponseWriter, req *http.Request) {
     if req.Method == "POST" {
@@ -76,21 +55,68 @@ func postOnly(handle http.HandlerFunc) http.HandlerFunc {
   }
 }
 
-func handleReportData(report Report) {
+// Routes the POST req.Body into the ElasticSearch channel to be indexed
+func routeReport(rw http.ResponseWriter, req *http.Request) {
+  // Read body of POST message
+  body, _ := ioutil.ReadAll(req.Body)
+
+  // Parse json string into Report struct
+  var report Report
+  err := json.Unmarshal(body, &report)
+  if err != nil {
+    panic(err)
+  }
+
+  // Middleware to manipulate data as desired
+  returnStr := handleReportData(report)
+
+  // Send stringified report to ElasticSearch via elastiChan channel
+  elastiChan <- returnStr
+}
+
+// Middleware to handle different Report Types
+func handleReportData(report Report) string {
   switch report.Type {
     case "envData":
-      fmt.Printf("\n\nReport Type: %v", report.EnvData.UserAgent)
+      handleEnvData(report)
     case "adData":
-      report.AdData.AdRequestDelta = report.AdData.AdRequestEnd - report.AdData.AdRequestStart
-      fmt.Printf("AssetData AdRequestDelta : %v", report.AdData.AdRequestDelta)
-      // fmt.Printf("AssetData has Preroll : %v", report.AdData.HasPreroll)
+      handleAdData(report)
     case "assetData":
-      fmt.Println("ASSET DATA")
+      handleAssetData(report)
     case "eventLog":
-      fmt.Println("EVENT LOG")
+      handleEventLog(report)
+  }
+
+  // Convert Report struct to json string
+  returnStr, _ := json.Marshal(report)
+  return string(returnStr)
+}
+
+// Handler function for Environment Data - no return
+func handleEnvData (report Report) {
+  fmt.Printf("\n\nReport Type: %v", report.EnvData.UserAgent)
+}
+
+// Handler function for Ad Data - no return
+func handleAdData (report Report) {
+  if report.AdData.HasPreroll {
+    report.AdData.AdRequestDelta = report.AdData.AdRequestEnd - report.AdData.AdRequestStart
+    fmt.Printf("AssetData AdRequestDelta : %v", report.AdData.AdRequestDelta)
   }
 }
 
+// Handler function for Asset Data - no return
+func handleAssetData (report Report) {
+  fmt.Println("ASSET DATA")
+}
+
+// Handler function for Event Logs - no return
+func handleEventLog (report Report) {
+  fmt.Println("EVENT LOG")
+}
+
+// Structs to parse raw data into and contain manipulated data before stringifying for Indexing
+// Top Level Report Structure
 type Report struct {
   Type        string            `json:"type"`
   Guid        string            `json:"guid"`
@@ -101,6 +127,7 @@ type Report struct {
   EventLog    []*EventLogItem   `json:"eventLog"`
 }
 
+// Secondary Level Environment Data Structure
 type EnvDataReport struct {
   UserAgent       string  `json:"userAgent"`
   PageURL         string  `json:"pageURL"`
@@ -110,6 +137,7 @@ type EnvDataReport struct {
   // Date string/float? `json:"date"`
 }
 
+// Secondary Level Ad Data Structure
 type AdDataReport struct {
   AdRequestStart  float64   `json:"adRequestStart"`
   AdRequestEnd    float64   `json:"adRequestEnd"`
@@ -126,6 +154,7 @@ type AdDataReport struct {
   AdRequestDelta float64
 }
 
+// Secondary Level Asset Data Structure
 type AssetDataReport struct {
   AssetURL    string  `json:"assetURL"`
   AssetMPXid  string  `json:"assetMPXid"`
@@ -133,6 +162,7 @@ type AssetDataReport struct {
   CcType      string  `json:"ccType"`
 }
 
+// Secondary Level Event Data Structure for Event Logs
 type EventLogItem struct {
   Type  string  `json:"type"`
   Time  float64   `json:"time"`
