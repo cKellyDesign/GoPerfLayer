@@ -99,10 +99,8 @@ func handleEnvData (report Report) {
 
 // Handler function for Ad Data - no return
 func handleAdData (report Report) {
-  if report.AdData.HasPreroll {
-    report.AdData.AdRequestDelta = report.AdData.AdRequestEnd - report.AdData.AdRequestStart
-    fmt.Printf("AssetData AdRequestDelta : %v", report.AdData.AdRequestDelta)
-  }
+  report.AdData.AdRequestDelta = report.AdData.AdRequestEnd - report.AdData.AdRequestStart
+  fmt.Printf("AssetData AdRequestDelta : %v", report.AdData.AdRequestDelta)
 }
 
 // Handler function for Asset Data - no return
@@ -141,8 +139,8 @@ type EnvDataReport struct {
 type AdDataReport struct {
   AdRequestStart  float64   `json:"adRequestStart"`
   AdRequestEnd    float64   `json:"adRequestEnd"`
-  AdRequestUrl    string  `json:"adRequestUrl"`
-  HasPreroll      bool    `json:"hasPreroll"`
+  AdRequestUrl    string    `json:"adRequestUrl"`
+  HasPreroll      bool      `json:"hasPreroll"`
   PrerollData     struct {
     AdId                  string  `json:"_adId"`
     CreativeId            string  `json:"_creativeId"`
